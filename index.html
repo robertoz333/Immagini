@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="utf-8" />
-  <title>Immagini — OneNote-like (Single File)</title>
+  <title>Immagini da prompt — OneNote-like (Single File)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
@@ -71,7 +71,6 @@
     }
     .title-inline:hover, .title-inline:focus { border-color: var(--border); outline: none; background: var(--bg-elev); }
 
-    /* ========= INIZIO STILI NUOVI: Input Titoli Readonly ========= */
     .title-inline[readonly] {
         cursor: default;
     }
@@ -79,7 +78,6 @@
         border-color: transparent;
         background: transparent;
     }
-    /* ========= FINE STILI NUOVI ========= */
 
     /* --- STILE PER IL TITOLO DI NOTE, SOTTONOTE E PAGINE --- */
     .title-inline.title-highlight {
@@ -123,8 +121,7 @@
     #editor a { color: var(--accent-2); text-decoration: underline; cursor: pointer; }
     #editor table { border-collapse: collapse; width: 100%; }
     #editor table td, #editor table th { border: 1px solid var(--border); padding: 6px 8px; }
-
-    /* ========= INIZIO STILI NUOVI: EDITOR INVERTITO ========= */
+    
     .editor-wrap.inverted #editor,
     .editor-wrap.inverted #page-title {
         background-color: #ffffff;
@@ -166,7 +163,6 @@
         background: #252525;
         border-color: #555;
     }
-    /* ========= FINE STILI NUOVI ========= */
 
     .canvas-wrap { display: none; padding: 12px 16px 40px; max-width: 1100px; margin: 0 auto; }
     .canvas-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
@@ -206,14 +202,34 @@
     .dot { width: 10px; height: 10px; border-radius: 999px; border: 1px solid var(--border); display: inline-block; }
     .tinted { transition: background .15s ease, border-color .15s ease; }
     .swatch { width: 26px; height: 24px; border: 1px solid var(--border); border-radius: 6px; display: inline-block; vertical-align: middle; }
-    .color-select {
+    
+    /* === TAVOLOZZA COLORI === */
+    .color-palette {
+      display: none;
+      position: absolute;
       background: var(--bg-elev);
-      color: var(--text);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 6px 8px;
-      min-width: 140px;
+      padding: 8px;
+      box-shadow: var(--shadow);
+      z-index: 10;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      width: 180px;
     }
+    .palette-swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform .1s ease;
+    }
+    .palette-swatch:hover {
+      transform: scale(1.15);
+      border-color: var(--accent-2);
+    }
+    /* === FINE TAVOLOZZA === */
 
     /* Img sizer (pannellino) */
     .img-sizer { margin: 6px 0 10px; background: #0b1020; border: 1px solid var(--border); border-radius: 8px; padding: 6px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -229,7 +245,7 @@
 <body>
 <div id="app">
   <header>
-    <div class="brand">Immagini</div>
+    <div class="brand">Immagini da prompt</div>
     <div class="searchbar">
       <input id="globalSearch" placeholder="Cerca in tutte le pagine (titolo + contenuto) — premi Invio" />
     </div>
@@ -245,15 +261,14 @@
 
   <div class="container">
     <aside class="sidebar">
-      <div class="section-title row" style="flex-wrap: wrap;">
-        <span class="grow">Taccuini</span>
-        <button id="collapseAllBtn" title="Comprimi tutto">–</button>
-        <div id="notebookColorUI" class="row" style="gap:6px; width: 100%; align-items:center; margin-top:6px;">
-          <span class="color-label">Colore taccuino:</span>
-          <select id="notebookColorSelect" class="color-select"></select>
-          <button id="clearNotebookColorBtn" title="Rimuovi colore">✕</button>
+      <div class="section-title row" style="align-items: center; gap: 8px;">
+        <div id="notebookColorUI" class="row grow" style="gap:6px; align-items:center;">
+          <button id="notebookColorBtn" class="color-picker-btn">Colore</button>
           <span id="notebookColorPreview" class="swatch"></span>
+          <span class="grow"></span>
+          <button id="clearNotebookColorBtn" title="Rimuovi colore">✕</button>
         </div>
+        <button id="collapseAllBtn" title="Comprimi tutto">–</button>
       </div>
       <div id="tree" class="tree"></div>
     </aside>
@@ -262,10 +277,10 @@
       <div class="section-title row" style="flex-wrap: wrap;">
         <span class="grow" id="pagesHeader">Sezioni/Pagine</span>
         <div id="sectionColorUI" class="row" style="gap:6px; align-items:center; width: 100%;">
-          <span class="color-label">Colore sezione:</span>
-          <select id="sectionColorSelect" class="color-select"></select>
-          <button id="clearSectionColorBtn" title="Rimuovi colore">✕</button>
+          <button id="sectionColorBtn" class="color-picker-btn">Colore Sez.</button>
           <span id="sectionColorPreview" class="swatch"></span>
+          <span class="grow"></span>
+          <button id="clearSectionColorBtn" title="Rimuovi colore">✕</button>
         </div>
         <div class="row" style="gap:6px; width: 100%;">
           <button id="newSectionBtn" class="tinted">+ Sezione</button>
@@ -300,6 +315,13 @@
           <button id="codeBtn">{ } Codice</button>
           <button data-cmd="insertHorizontalRule">— HR</button>
         </div>
+        <!-- ========= INIZIO NUOVA SEZIONE TOOLBAR: FONT ========= -->
+        <div class="seg">
+            <select id="fontFamilySelect" title="Scegli font"></select>
+            <button id="decreaseFontBtn" title="Riduci dimensione testo">-</button>
+            <button id="increaseFontBtn" title="Aumenta dimensione testo">+</button>
+        </div>
+        <!-- ========= FINE NUOVA SEZIONE TOOLBAR ========= -->
         <div class="seg">
           <button id="undoBtn">↶</button>
           <button id="redoBtn">↷</button>
@@ -307,10 +329,9 @@
           <button id="invertEditorBtn" title="Inverti colori editor">🎨</button>
         </div>
         <div class="seg" id="pageColorSeg" style="padding:6px 8px; align-items:center; gap:8px;">
-          <span class="color-label">Colore pagina:</span>
-          <select id="pageColorSelect" class="color-select"></select>
-          <button id="clearPageColorBtn" title="Rimuovi colore pagina">✕</button>
-          <span id="pageColorPreview" class="swatch"></span>
+           <button id="pageColorBtn" class="color-picker-btn">Colore Pagina</button>
+           <span id="pageColorPreview" class="swatch"></span>
+           <button id="clearPageColorBtn" title="Rimuovi colore pagina">✕</button>
         </div>
       </div>
 
@@ -393,6 +414,7 @@
       </div>
     </main>
   </div>
+  <div id="colorPalette" class="color-palette"></div>
 </div>
 
 <script>
@@ -457,37 +479,50 @@ function updateElementColor(el, color) {
 }
 
 /* -------------------- Dati -------------------- */
-const STORAGE_KEY = 'immagini.v1';
-// Palette di colori base. Aggiunti ulteriori colori per fornire più opzioni all’utente.
+const STORAGE_KEY = 'prompt.v1';
+const FONT_LIST = ['Inter', 'Arial', 'Verdana', 'Georgia', 'Times New Roman', 'Courier New'];
+// Palette di colori base con nomi.
 const BASE_PALETTE = [
-  '#FFD166', // senape
-  '#06D6A0', // verde menta
-  '#EF476F', // rosa/rosso
-  '#118AB2', // blu oceano
-  '#A78BFA', // lilla
-  '#F59E0B', // arancio
-  '#94A3B8', // grigio azzurro
-  // nuovi colori
-  '#E63946', // rosso mattone
-  '#2A9D8F', // verde bosco
-  '#F4A261', // arancio salmone
-  '#E9C46A', // giallo senape
-  '#264653'  // blu petrolio
+  { hex: '#FFD166', name: 'Senape' },
+  { hex: '#06D6A0', name: 'Verde Menta' },
+  { hex: '#EF476F', name: 'Rosa Rosso' },
+  { hex: '#118AB2', name: 'Blu Oceano' },
+  { hex: '#A78BFA', name: 'Lilla' },
+  { hex: '#F59E0B', name: 'Arancio' },
+  { hex: '#94A3B8', name: 'Grigio Azzurro' },
+  { hex: '#E63946', name: 'Rosso Mattone' },
+  { hex: '#2A9D8F', name: 'Verde Bosco' },
+  { hex: '#F4A261', name: 'Arancio Salmone' },
+  { hex: '#E9C46A', name: 'Giallo Senape' },
+  { hex: '#264653', name: 'Blu Petrolio' },
+  { hex: '#F4ACB7', name: 'Rosa Cipria' },
+  { hex: '#6D28D9', name: 'Viola Intenso' },
+  { hex: '#8ECAE6', name: 'Azzurro Cielo' },
+  { hex: '#BC6C25', name: 'Terracotta' },
+  { hex: '#A7C957', name: 'Verde Lime' },
+  { hex: '#4A4E69', name: 'Grigio Ardesia' },
+  { hex: '#FF8FAB', name: 'Corallo' },
+  { hex: '#B2F7EF', name: 'Menta Chiaro' },
+  { hex: '#C724B1', name: 'Magenta' },
+  { hex: '#0077B6', name: 'Blu-Verde' }
 ];
 const DEFAULT_DB = {
-  version: 3,
+  version: 4,
   order: { notebooks: [] },
   notebooks: {}, // { id, title, sections[], color, collapsed }
   sections: {},  // { id, notebookId, title, pages[], color }
-  pages: {},     // { id, sectionId, title, html, strokes[], attachments[], tags[], color, createdAt, updatedAt, deleted, editorTheme }
+  pages: {},     // { id, ..., editorTheme, fontSize, fontFamily }
   trash: { notebooks: [], sections: [], pages: [] },
   settings: { theme: 'dark', customColors: [] }
 };
 
 function getFullPalette() {
   const custom = (DB.settings && Array.isArray(DB.settings.customColors)) ? DB.settings.customColors : [];
-  const set = new Set([...BASE_PALETTE, ...custom]);
-  return Array.from(set);
+  const customObjects = custom.map(hex => ({ hex: hex, name: hex }));
+  const paletteMap = new Map();
+  BASE_PALETTE.forEach(item => paletteMap.set(item.hex.toLowerCase(), item));
+  customObjects.forEach(item => paletteMap.set(item.hex.toLowerCase(), item));
+  return Array.from(paletteMap.values());
 }
 
 // Migrazione/normalizzazione DB
@@ -511,7 +546,6 @@ function migrateDB(db) {
     if (!nb.id) nb.id = id;
     if (!Array.isArray(nb.sections)) nb.sections = [];
     if (typeof nb.color !== 'string') nb.color = null;
-    // nuova proprietà per il collasso dell'elenco delle sezioni
     if (typeof nb.collapsed !== 'boolean') nb.collapsed = false;
   });
 
@@ -537,9 +571,12 @@ function migrateDB(db) {
     if (typeof p.html !== 'string') p.html = '<p></p>';
     if (typeof p.color !== 'string') p.color = null;
     if (typeof p.editorTheme !== 'string') p.editorTheme = 'light';
+    // ========= NUOVE PROPRIETÀ FONT =========
+    if (typeof p.fontSize !== 'string') p.fontSize = '16px';
+    if (typeof p.fontFamily !== 'string') p.fontFamily = 'Inter';
   });
 
-  db.version = 3;
+  db.version = 4;
   return db;
 }
 
@@ -552,7 +589,7 @@ function loadDB() {
       // Seed iniziale
       const nb = createNotebook(db, 'Taccuino personale', false);
       const sec = createSection(db, nb.id, 'Sezione 1', false);
-      const page = createPage(db, sec.id, 'Benvenuto in Immagini', { tpl: 'welcome' }, false);
+      const page = createPage(db, sec.id, 'Benvenuto in Immagini da prompt', { tpl: 'welcome' }, false);
       db.pages[page.id].html = `<h2>Benvenuto! 👋</h2><p>Questa è una pagina di esempio. Puoi scrivere testo, incollare immagini, aggiungere to‑do, disegnare nel canvas e allegare file/audio.</p><ul><li>Prova <b>grassetto</b>, <i>corsivo</i>, <u>sottolineato</u>.</li><li>Inserisci un'immagine con drag&drop o il pulsante.</li><li>Passa alla tab Canvas per disegnare.</li></ul>`;
     } else {
       db = JSON.parse(raw);
@@ -581,6 +618,7 @@ applyTheme((DB.settings && DB.settings.theme) ? DB.settings.theme : 'dark');
 
 // Seleziona prima pagina utile
 selectFirstPage();
+populateFontSelect();
 
 /* -------------------- Crea/Modifica dati -------------------- */
 function createNotebook(db, title='Nuovo taccuino', persist=true) {
@@ -603,7 +641,7 @@ function createPage(db, sectionId, title='Nuova pagina', opts={}, persist=true) 
     id, sectionId, title, html: templateHtml(opts.tpl || 'blank'),
     strokes: [], attachments: [], tags: [], color: null,
     createdAt: nowIso(), updatedAt: nowIso(), deleted: false,
-    editorTheme: 'light' // Default theme per pagina
+    editorTheme: 'light', fontSize: '16px', fontFamily: 'Inter'
   };
   db.sections[sectionId].pages.push(id);
   if (persist) saveDB(db);
@@ -808,7 +846,7 @@ function refreshContext() {
   $('#newPageBtn').disabled = !current.sectionId;
   const pg = DB.pages[current.pageId || ''] || null;
   const hasPage = !!pg;
-  $$('.toolbar button, .tag-input input, #clearTagsBtn').forEach(el => el.disabled = !hasPage);
+  $$('.toolbar button, .toolbar select, .tag-input input, #clearTagsBtn').forEach(el => el.disabled = !hasPage);
   $$('.tabs .tab').forEach(t => t.classList.toggle('ghost', !hasPage));
 
   renderNotebookColorUI();
@@ -823,7 +861,8 @@ function refreshContext() {
     $('#tagList').innerHTML = '';
     $('#metaPage').innerHTML = 'Nessuna pagina selezionata.';
     $('#editor').style.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border');
-    applyEditorTheme(null); // Pulisce il tema dell'editor
+    applyEditorTheme(null);
+    applyEditorStyles(null);
     hideImgSizer(); hideImgOverlay();
     return;
   }
@@ -834,7 +873,8 @@ function refreshContext() {
   renderAttachments(pg);
   drawReplay(pg);
   applyNoteColorUI(pg);
-  applyEditorTheme(pg); // Applica il tema dell'editor per la pagina corrente
+  applyEditorTheme(pg);
+  applyEditorStyles(pg);
   hideImgSizer(); hideImgOverlay();
 }
 
@@ -1011,127 +1051,137 @@ $('#editor').addEventListener('drop', async (e) => {
   saveEditorDebounced();
 });
 
-/* -------------------- Select Colori (menu a tendina) -------------------- */
-function populateColorSelect(selectEl, selected) {
-  selectEl.innerHTML = '';
-  const optNone = document.createElement('option');
-  optNone.value = ''; optNone.textContent = 'Nessun colore';
-  optNone.style.background = '';
-  selectEl.appendChild(optNone);
-  getFullPalette().forEach(col => {
-    const o = document.createElement('option');
-    o.value = col;
-    // Mostra l'esempio del colore impostando lo sfondo dell'opzione
-    o.textContent = col;
-    o.style.background = col;
-    o.style.color = getContrastYIQ(col);
-    if (selected && selected.toLowerCase() === col.toLowerCase()) o.selected = true;
-    selectEl.appendChild(o);
-  });
-  // Seleziona "Nessun colore" se selected null
-  if (!selected) selectEl.value = '';
-}
+/* -------------------- Tavolozza Colori -------------------- */
+let activePalette = { target: null, element: null };
+const colorPalette = $('#colorPalette');
 
-/* Notebook: select + anteprima */
-function renderNotebookColorUI() {
-  const nb = DB.notebooks[current.notebookId || ''] || null;
-  const select = $('#notebookColorSelect');
-  const clearBtn = $('#clearNotebookColorBtn');
-  const preview = $('#notebookColorPreview');
-
-  select.disabled = !nb; clearBtn.disabled = !nb;
-
-  populateColorSelect(select, nb ? nb.color : null);
-  preview.style.background = nb && nb.color ? nb.color : 'transparent';
-
-  select.onchange = () => {
-    if (!nb) return;
-    nb.color = select.value || null;
-    saveDB();
-    renderTree(); renderPages(); applyActionTints();
-    preview.style.background = nb.color || 'transparent';
-  };
-  clearBtn.onclick = () => {
-    if (!nb) return;
-    nb.color = null;
-    saveDB();
-    renderTree(); renderPages(); applyActionTints();
-    populateColorSelect(select, null);
-    preview.style.background = 'transparent';
-  };
-}
-
-/* Sezione: select + anteprima */
-function renderSectionColorUI() {
-  const sec = DB.sections[current.sectionId || ''] || null;
-  const select = $('#sectionColorSelect');
-  const clearBtn = $('#clearSectionColorBtn');
-  const preview = $('#sectionColorPreview');
-
-  if (!sec) {
-    if (select) select.innerHTML = '';
-    if (preview) preview.style.background = 'transparent';
-    if (clearBtn) clearBtn.disabled = true;
+function openColorPalette(target, triggerBtn) {
+  if (activePalette.element && activePalette.element.style.display === 'grid' && activePalette.target === target) {
+    closeColorPalette();
     return;
   }
 
-  select.disabled = false; clearBtn.disabled = false;
+  activePalette.target = target;
+  activePalette.element = colorPalette;
 
-  populateColorSelect(select, sec.color);
-  preview.style.background = sec.color || (effectiveColorForSection(sec) || 'transparent');
+  colorPalette.innerHTML = '';
+  getFullPalette().forEach(item => {
+    const swatch = document.createElement('div');
+    swatch.className = 'palette-swatch';
+    swatch.style.background = item.hex;
+    swatch.dataset.hex = item.hex;
+    swatch.title = item.name;
+    colorPalette.appendChild(swatch);
+  });
 
-  select.onchange = () => {
-    const s = DB.sections[current.sectionId]; if (!s) return;
-    s.color = select.value || null;
-    saveDB();
-    renderTree();
-    renderPages();
-    refreshContext();
-  };
+  const rect = triggerBtn.getBoundingClientRect();
+  colorPalette.style.display = 'grid';
+  colorPalette.style.top = `${rect.bottom + 4}px`;
+  colorPalette.style.left = `${rect.left}px`;
+}
+
+function closeColorPalette() {
+  if (activePalette.element) {
+    activePalette.element.style.display = 'none';
+  }
+  activePalette = { target: null, element: null };
+}
+
+colorPalette.addEventListener('click', (e) => {
+  const swatch = e.target.closest('.palette-swatch');
+  if (!swatch) return;
+
+  const hex = swatch.dataset.hex;
+  
+  switch(activePalette.target) {
+    case 'notebook':
+      const nb = DB.notebooks[current.notebookId];
+      if(nb) { nb.color = hex; }
+      break;
+    case 'section':
+      const sec = DB.sections[current.sectionId];
+      if(sec) { sec.color = hex; }
+      break;
+    case 'page':
+      const pg = DB.pages[current.pageId];
+      if(pg) { pg.color = hex; pg.updatedAt = nowIso(); }
+      break;
+  }
+  
+  saveDB();
+  renderTree();
+  renderPages();
+  refreshContext();
+  closeColorPalette();
+});
+
+document.addEventListener('click', (e) => {
+  if (activePalette.element && !colorPalette.contains(e.target) && !e.target.closest('.color-picker-btn')) {
+    closeColorPalette();
+  }
+});
+
+/* Notebook: UI Colore */
+function renderNotebookColorUI() {
+  const nb = DB.notebooks[current.notebookId || ''] || null;
+  const btn = $('#notebookColorBtn');
+  const clearBtn = $('#clearNotebookColorBtn');
+  const preview = $('#notebookColorPreview');
+
+  btn.disabled = !nb;
+  clearBtn.disabled = !nb;
+
+  preview.style.background = nb && nb.color ? nb.color : 'transparent';
+  
+  btn.onclick = (e) => { e.stopPropagation(); openColorPalette('notebook', btn); };
   clearBtn.onclick = () => {
-    const s = DB.sections[current.sectionId]; if (!s) return;
-    s.color = null;
+    if (!nb) return;
+    nb.color = null;
     saveDB();
     renderTree(); renderPages(); refreshContext();
   };
 }
 
-/* Pagina: select + anteprima */
+/* Sezione: UI Colore */
+function renderSectionColorUI() {
+  const sec = DB.sections[current.sectionId || ''] || null;
+  const btn = $('#sectionColorBtn');
+  const clearBtn = $('#clearSectionColorBtn');
+  const preview = $('#sectionColorPreview');
+
+  btn.disabled = !sec;
+  clearBtn.disabled = !sec;
+
+  preview.style.background = sec ? (sec.color || effectiveColorForSection(sec) || 'transparent') : 'transparent';
+
+  btn.onclick = (e) => { e.stopPropagation(); openColorPalette('section', btn); };
+  clearBtn.onclick = () => {
+    if (!sec) return;
+    sec.color = null;
+    saveDB();
+    renderTree(); renderPages(); refreshContext();
+  };
+}
+
+/* Pagina: UI Colore */
 function renderPageColorUI() {
   const pg = DB.pages[current.pageId || ''] || null;
-  const select = $('#pageColorSelect');
+  const btn = $('#pageColorBtn');
   const clearBtn = $('#clearPageColorBtn');
   const preview = $('#pageColorPreview');
 
-  if (!pg) {
-    if (select) select.innerHTML = '';
-    if (preview) preview.style.background = 'transparent';
-    if (clearBtn) clearBtn.disabled = true;
-    return;
-  }
+  btn.disabled = !pg;
+  clearBtn.disabled = !pg;
 
-  select.disabled = false; clearBtn.disabled = false;
+  preview.style.background = pg ? (effectiveColorForPage(pg) || 'transparent') : 'transparent';
 
-  populateColorSelect(select, pg.color);
-  preview.style.background = effectiveColorForPage(pg) || 'transparent';
-
-  select.onchange = () => {
-    const p = DB.pages[current.pageId]; if (!p) return;
-    p.color = select.value || null;
-    p.updatedAt = nowIso();
-    saveDB();
-    renderPages();
-    applyNoteColorUI(p);
-    preview.style.background = effectiveColorForPage(p) || 'transparent';
-  };
+  btn.onclick = (e) => { e.stopPropagation(); openColorPalette('page', btn); };
   clearBtn.onclick = () => {
-    const p = DB.pages[current.pageId]; if (!p) return;
-    p.color = null;
-    p.updatedAt = nowIso();
+    if (!pg) return;
+    pg.color = null;
+    pg.updatedAt = nowIso();
     saveDB();
-    renderPages(); applyNoteColorUI(p);
-    populateColorSelect(select, null);
-    preview.style.background = effectiveColorForPage(p) || 'transparent';
+    renderPages(); refreshContext();
   };
 }
 
@@ -1146,12 +1196,11 @@ function applyNoteColorUI(pg) {
   }
 }
 
-// ========= INIZIO NUOVA LOGICA: TEMA EDITOR =========
+// ========= INIZIO NUOVA LOGICA: TEMA EDITOR E STILI FONT =========
 function applyEditorTheme(pg) {
     const wrap = $('.editor-wrap');
     if (!pg || pg.editorTheme === 'light') {
         wrap.classList.remove('inverted', 'dark-mode');
-        // Se il tema globale è scuro, applichiamo lo stile invertito (sfondo bianco)
         if (DB.settings.theme === 'dark') {
             wrap.classList.add('inverted');
         }
@@ -1161,17 +1210,69 @@ function applyEditorTheme(pg) {
     }
 }
 
+function applyEditorStyles(pg) {
+  const editor = $('#editor');
+  const title = $('#page-title');
+  if (!pg) {
+    editor.style.fontSize = '';
+    editor.style.fontFamily = '';
+    title.style.fontFamily = '';
+    return;
+  }
+  editor.style.fontSize = pg.fontSize || '16px';
+  editor.style.fontFamily = pg.fontFamily || 'Inter';
+  title.style.fontFamily = pg.fontFamily || 'Inter';
+  $('#fontFamilySelect').value = pg.fontFamily || 'Inter';
+}
+
+function populateFontSelect() {
+    const select = $('#fontFamilySelect');
+    FONT_LIST.forEach(font => {
+        const opt = document.createElement('option');
+        opt.value = font;
+        opt.textContent = font;
+        opt.style.fontFamily = font;
+        select.appendChild(opt);
+    });
+}
 
 $('#invertEditorBtn').onclick = () => {
   const pg = DB.pages[current.pageId || ''];
   if (!pg) return;
-  // Cambia tra i due stati
   const currentThemeIsDark = (pg.editorTheme === 'dark');
   pg.editorTheme = currentThemeIsDark ? 'light' : 'dark';
   pg.updatedAt = nowIso();
   saveDB();
   applyEditorTheme(pg);
 };
+
+$('#fontFamilySelect').addEventListener('change', (e) => {
+  const pg = DB.pages[current.pageId || '']; if (!pg) return;
+  pg.fontFamily = e.target.value;
+  pg.updatedAt = nowIso();
+  saveDB();
+  applyEditorStyles(pg);
+});
+
+$('#increaseFontBtn').addEventListener('click', () => {
+  const pg = DB.pages[current.pageId || '']; if (!pg) return;
+  let currentSize = parseInt(pg.fontSize || '16px', 10);
+  currentSize = Math.min(48, currentSize + 1); // Cap a 48px
+  pg.fontSize = currentSize + 'px';
+  pg.updatedAt = nowIso();
+  saveDB();
+  applyEditorStyles(pg);
+});
+
+$('#decreaseFontBtn').addEventListener('click', () => {
+  const pg = DB.pages[current.pageId || '']; if (!pg) return;
+  let currentSize = parseInt(pg.fontSize || '16px', 10);
+  currentSize = Math.max(10, currentSize - 1); // Floor a 10px
+  pg.fontSize = currentSize + 'px';
+  pg.updatedAt = nowIso();
+  saveDB();
+  applyEditorStyles(pg);
+});
 // ========= FINE NUOVA LOGICA =========
 
 /* -------------------- Img sizer + overlay handles -------------------- */
@@ -1281,7 +1382,7 @@ function switchTab(id) {
 }
 
 /* -------------------- Canvas/Ink -------------------- */
-const canvas = $('#draw'); const ctx = canvas.getContext('2d', { alpha: true }); // MODIFICA: alpha: true per gomma
+const canvas = $('#draw'); const ctx = canvas.getContext('2d', { alpha: true });
 let tool = 'pen', penColor = '#6ea8fe', penWidth = 2, drawing = false, currentStroke = null;
 
 function resizeCanvas() {
@@ -1297,8 +1398,8 @@ window.addEventListener('resize', debounce(resizeCanvas, 150));
 
 function drawReplay(pg) {
   if (!pg) return;
-  const w = canvas.width, h = canvas.height;
-  ctx.clearRect(0, 0, w, h); // MODIFICA: Pulisce il canvas prima di ridisegnare
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg-elev'); ctx.fillRect(0,0,w,h);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   (pg.strokes || []).forEach(st => {
@@ -1587,7 +1688,7 @@ $('#newPageBtn').onclick = () => {
   openPage(pg.id); renderPages();
 };
 $('#exportBtn').onclick = () => {
-  download('immagini.json', JSON.stringify(DB, null, 2), 'application/json;charset=utf-8');
+  download('prompt.json', JSON.stringify(DB, null, 2), 'application/json;charset=utf-8');
 };
 $('#importInput').addEventListener('change', async (e) => {
   const file = e.target.files[0]; if (!file) return;
@@ -1595,7 +1696,7 @@ $('#importInput').addEventListener('change', async (e) => {
     const text = await file.text();
     JSON.parse(text);
     if (!confirm('Importare e sovrascrivere il database attuale? Verrà fatto un backup automatico.')) return;
-    download('immagini.backup.json', localStorage.getItem(STORAGE_KEY) || '{}', 'application/json;charset=utf-8');
+    download('prompt.backup.json', localStorage.getItem(STORAGE_KEY) || '{}', 'application/json;charset=utf-8');
     localStorage.setItem(STORAGE_KEY, text);
     location.reload();
   } catch (err) {
@@ -1643,7 +1744,7 @@ $('#collapseAllBtn').onclick = () => {
 /* -------------------- Template -------------------- */
 function templateHtml(tpl) {
   if (tpl === 'welcome') {
-    return `<h1>Immagini</h1><p class="small">MVP in un solo file. Salvataggio locale.</p>`;
+    return `<h1>Immagini da prompt</h1><p class="small">MVP in un solo file. Salvataggio locale.</p>`;
   }
   if (tpl === 'meeting') {
     return `<h1>Note riunione</h1>
