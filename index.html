@@ -1688,7 +1688,7 @@ $('#newPageBtn').onclick = () => {
   openPage(pg.id); renderPages();
 };
 $('#exportBtn').onclick = () => {
-  download('prompt.json', JSON.stringify(DB, null, 2), 'application/json;charset=utf-8');
+  download('Immagini.json', JSON.stringify(DB, null, 2), 'application/json;charset=utf-8');
 };
 $('#importInput').addEventListener('change', async (e) => {
   const file = e.target.files[0]; if (!file) return;
@@ -1696,7 +1696,7 @@ $('#importInput').addEventListener('change', async (e) => {
     const text = await file.text();
     JSON.parse(text);
     if (!confirm('Importare e sovrascrivere il database attuale? Verrà fatto un backup automatico.')) return;
-    download('prompt.backup.json', localStorage.getItem(STORAGE_KEY) || '{}', 'application/json;charset=utf-8');
+    download('Immagini.backup.json', localStorage.getItem(STORAGE_KEY) || '{}', 'application/json;charset=utf-8');
     localStorage.setItem(STORAGE_KEY, text);
     location.reload();
   } catch (err) {
