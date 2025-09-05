@@ -51,7 +51,8 @@
     }
     .ok { color: #d8ffe8; border-color: rgba(46,204,113,.3); }
     .ok:hover { background: rgba(46,204,113,.08); border-color: var(--ok); }
-    .container { display: grid; grid-template-columns: 300px 280px 1fr; gap: 0; flex: 1; min-height: 0; }
+    /* --- MODIFICA CHIAVE: Allargata la prima colonna --- */
+    .container { display: grid; grid-template-columns: 380px 280px 1fr; gap: 0; flex: 1; min-height: 0; }
     aside.sidebar, aside.pages { background: var(--panel); border-right: 1px solid var(--border); overflow: auto; }
     main.editor { background: var(--bg); overflow: auto; }
     .section-title { padding: 10px 12px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--panel); z-index: 2; }
@@ -791,7 +792,6 @@ function renderTree() {
           renderPages(); openPage(p.id); renderTree();
         };
 
-        // --- INIZIO CODICE CORRETTO ---
         const editSecColorBtn = document.createElement('button');
         editSecColorBtn.textContent = '🎨';
         editSecColorBtn.title = 'Cambia colore sezione';
@@ -802,7 +802,6 @@ function renderTree() {
             current.notebookId = sec.notebookId;
             openColorPalette('section', editSecColorBtn);
         };
-        // --- FINE CODICE CORRETTO ---
 
         const delSecBtn = document.createElement('button'); delSecBtn.className='danger'; delSecBtn.textContent='Elimina';
         delSecBtn.onclick = (e) => {
@@ -821,7 +820,6 @@ function renderTree() {
         updateElementColor(addPageBtn, sCol, {isButton: true});
         updateElementColor(editSecColorBtn, sCol, {isButton: true});
 
-        // --- MODIFICA: Aggiunto editSecColorBtn ---
         srow.append('📂', sDot, stitle, addPageBtn, editSecColorBtn, delSecBtn);
         g.append(srow);
       });
