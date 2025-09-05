@@ -707,6 +707,7 @@ function renderTree() {
     title.value = nb.title;
     title.placeholder = 'Titolo taccuino';
     title.readOnly = true;
+    title.onclick = (e) => e.stopPropagation(); // <-- FIX
     title.ondblclick = () => { title.readOnly = false; title.select(); };
     title.onblur = () => { title.readOnly = true; };
     title.onchange = () => { nb.title = title.value || 'Senza titolo'; saveDB(); renderTree(); };
@@ -777,6 +778,7 @@ function renderTree() {
         stitle.className = 'title-inline grow title-highlight';
         stitle.value = sec.title;
         stitle.readOnly = true;
+        stitle.onclick = (e) => e.stopPropagation(); // <-- FIX
         stitle.ondblclick = () => { stitle.readOnly = false; stitle.select(); };
         stitle.onblur = () => { stitle.readOnly = true; };
         stitle.onchange = () => { sec.title = stitle.value || 'Senza titolo'; saveDB(); renderTree(); renderPages(); };
@@ -849,6 +851,7 @@ function renderPages() {
     ttl.className='title-inline grow title-highlight';
     ttl.value = pg.title;
     ttl.readOnly = true;
+    ttl.onclick = (e) => e.stopPropagation(); // <-- FIX
     ttl.ondblclick = () => { ttl.readOnly = false; ttl.select(); };
     ttl.onblur = () => { ttl.readOnly = true; };
     ttl.onchange = () => { pg.title = ttl.value || 'Senza titolo'; pg.updatedAt = nowIso(); saveDB(); renderPages(); refreshContext(); };
