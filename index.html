@@ -318,6 +318,9 @@
           <button id="redoBtn">↷</button>
           <button id="clearFormatBtn">Tx</button>
           <button id="invertEditorBtn" title="Inverti colori editor">🎨</button>
+          <!-- ========= INIZIO NUOVO BOTTONE COPIA ========= -->
+          <button id="copyContentBtn" title="Copia contenuto come testo">📋 Copia</button>
+          <!-- ========= FINE NUOVO BOTTONE COPIA ========= -->
         </div>
         <div class="seg" id="pageColorSeg" style="padding:6px 8px; align-items:center; gap:8px;">
            <button id="pageColorBtn" class="color-picker-btn">Colore Pagina</button>
@@ -978,6 +981,34 @@ $('#redoBtn').onclick = () => exec('redo');
 $('#clearFormatBtn').onclick = () => exec('removeFormat');
 
 $$('.toolbar [data-cmd]').forEach(btn => { btn.onclick = () => { const cmd = btn.dataset.cmd; const val = btn.dataset.val || null; exec(cmd, val); }; });
+
+// ========= INIZIO LOGICA BOTTONE COPIA =========
+$('#copyContentBtn').onclick = () => {
+    const pg = DB.pages[current.pageId || ''];
+    if (!pg || !pg.html) {
+        alert('Nessun contenuto da copiare.');
+        return;
+    }
+    const textToCopy = stripHtml(pg.html);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            const btn = $('#copyContentBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Copiato!';
+            btn.classList.add('ok');
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('ok');
+            }, 2000);
+        }).catch(err => {
+            console.error('Errore durante la copia:', err);
+            alert('Impossibile copiare il testo.');
+        });
+    } else {
+        alert('La funzione di copia non è supportata in questo browser.');
+    }
+};
+// ========= FINE LOGICA BOTTONE COPIA =========
 
 function insertHtmlAtCursor(html) {
   focusEditor();
